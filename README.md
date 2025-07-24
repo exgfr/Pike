@@ -152,14 +152,52 @@ This lets you:
 
 ---
 
+## 🔑 Key Management
+
+Pike provides functions for managing API keys:
+
+```elixir
+# Create a new key
+Pike.insert(%{
+  key: "abc123",
+  enabled: true,  # Optional, defaults to true
+  permissions: [
+    %{resource: "Products", scopes: [:read, :write]}
+  ]
+})
+
+# Enable/disable a key
+Pike.disable_key("abc123")
+Pike.enable_key("abc123")
+
+# Check if a key is enabled
+Pike.key_enabled?("abc123")
+
+# Delete a key
+Pike.delete_key("abc123")
+
+# Update a key
+Pike.update_key("abc123", %{
+  permissions: [
+    %{resource: "Products", scopes: [:read]}
+  ]
+})
+```
+
+Disabled keys will return a `:disabled` error reason, which is handled by the responder.
+
+---
+
 ## 🧩 Store Backend
 
 Pike uses a pluggable store interface:
 
 ```elixir
-@callback get_key(String.t()) :: {:ok, map()} | :error
-@callback allows?(map(), resource :: String.t(), action :: atom()) :: boolean()
+@callback get_key(String.t()) :: {:ok, map()} | :error | {:error, :disabled}
+@callback action?(map(), resource :: String.t(), action :: atom()) :: boolean()
 @callback insert(map()) :: :ok | {:error, term()}  # optional
+@callback delete_key(String.t()) :: :ok | {:error, term()}  # optional
+@callback update_key(String.t(), map()) :: :ok | {:error, term()}  # optional
 ```
 
 You can provide your own module and configure it per plug or globally.
