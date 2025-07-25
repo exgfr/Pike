@@ -31,16 +31,11 @@ config :pike,
   store: Pike.Store.ETS
 ```
 
-### 2. Add Pike to Your Application Supervision Tree
+### 2. Create your ETS Table Module
 
 ```elixir
-def start(_type, _args) do
-  children = [
-    # ...other children
-    Pike.child_spec()
-  ]
-  
-  Supervisor.start_link(children, strategy: :one_for_one)
+defmodule YourApp.APIStore do
+  use Pike.Store.ETS, table_name: :default_api_keys
 end
 ```
 

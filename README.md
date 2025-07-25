@@ -39,8 +39,16 @@ Global application-wide config (only needed if overriding defaults):
 
 ```elixir
 config :pike,
-  store: Pike.Store.ETS,
+  store: YourApp.APIStore,
   on_auth_failure: {Pike.Responder.Default, :auth_failed}
+```
+
+Create your ETS Table:
+
+```elixir
+defmodule YourApp.APIStore do
+  use Pike.Store.ETS, table_name: :default_api_keys
+end
 ```
 
 ---
@@ -68,13 +76,13 @@ You can define **independent pipelines** for different API key types:
 ```elixir
 pipeline :public_api do
   plug Pike.AuthorizationPlug,
-    store: MyApp.PublicKeyStore,
+    store: YourApp.APIStore,
     assign_to: :public_api_key
 end
 
 pipeline :partner_api do
   plug Pike.AuthorizationPlug,
-    store: MyApp.PartnerStore,
+    store: YourApp.AlternativeAPIStore,
     on_auth_failure: {MyApp.Responder, :auth_failed},
     assign_to: :partner_key
 end
