@@ -26,7 +26,7 @@ defmodule Pike.Mixfile do
     [
       {:plug, "~> 1.14"},
       {:phoenix, "~> 1.7", optional: true},
-      {:ex_doc, "~> 0.34", only: :dev, runtime: false, warn_if_outdated: true},
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false, warn_if_outdated: true}
     ]
   end
 
@@ -48,7 +48,7 @@ defmodule Pike.Mixfile do
         "docs/quick-start.md",
         "docs/error-responses-and-debugging.md",
         "docs/roll-your-own-store.md",
-        "docs/using-pike-authorization-plug.md",
+        "docs/using-pike-authorization-plug.md"
       ],
       source_url: "https://github.com/exgfr/Pike"
     ]

@@ -29,7 +29,7 @@ defmodule Pike.Authorization do
     end
   end
 
-  defmacro require_permission opts do
+  defmacro require_permission(opts) do
     action = __CALLER__.function |> elem(0)
 
     quote do

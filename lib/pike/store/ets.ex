@@ -48,7 +48,9 @@ defmodule Pike.Store.ETS do
       @table unquote(table_name) || :"#{__MODULE__}_keys"
 
       def init(opts \\ []) do
-        table_opts = Keyword.get(opts, :table_opts, [:named_table, :set, :public, read_concurrency: true])
+        table_opts =
+          Keyword.get(opts, :table_opts, [:named_table, :set, :public, read_concurrency: true])
+
         :ets.new(@table, table_opts)
       rescue
         # already exists
@@ -115,5 +117,4 @@ defmodule Pike.Store.ETS do
       def table_name, do: @table
     end
   end
-
 end

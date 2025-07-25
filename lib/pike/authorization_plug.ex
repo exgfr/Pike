@@ -45,16 +45,16 @@ defmodule Pike.AuthorizationPlug do
 
   @doc """
   Initializes the plug with provided options or falls back to application configuration.
-  
+
   ## Parameters
-  
+
     * `opts` - Keyword list of options:
       * `:store` - Storage backend module
       * `:assign_to` - Connection assign key 
       * `:on_auth_failure` - Responder module and function tuple
-  
+
   ## Returns
-  
+
   A map with resolved configuration values that will be passed to `call/2`.
   """
   def init(opts) do
@@ -72,21 +72,21 @@ defmodule Pike.AuthorizationPlug do
 
   @doc """
   Processes the connection by extracting and validating the API key from the request.
-  
+
   ## Process Flow
-  
+
   1. Extracts the Bearer token from the authorization header
   2. Validates the token against the configured store
   3. If valid, assigns the key to the connection
   4. If invalid, delegates to the failure handler
-  
+
   ## Parameters
-  
+
     * `conn` - The Plug connection
     * `opts` - The options map from `init/1`
-  
+
   ## Returns
-  
+
   The connection with the API key assigned or with an error response (halted).
   """
   def call(conn, opts) do
