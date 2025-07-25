@@ -1,8 +1,23 @@
 defmodule Pike do
   @moduledoc """
-  Pike — Guard at the API Gate
+  A lightweight, embeddable Elixir library for API key authentication and fine-grained authorization. Pike provides a plug-compatible middleware system and a resource-based DSL for defining authorization rules at the controller and action level.
 
-  A lightweight, pluggable API key authentication and authorization system for Elixir applications.
+  ## Authorization Flow
+
+  1. The `Pike.AuthorizationPlug` extracts the Bearer token from the request header
+  2. The configured store validates the key and checks permissions
+  3. Valid keys are assigned to `conn.assigns[:pike_api_key]` (or custom assign)
+  4. The controller's action permission requirements are checked via DSL
+  5. Unauthorized requests are handled by the configured responder
+
+  ## Configuration
+
+  Pike can be customized at both the global and per-pipeline level:
+
+  * `store`: The storage backend (default: `Pike.Store.ETS`)
+  * `assign_to`: Where to assign the key (default: `:pike_api_key`)
+  * `on_auth_failure`: Failure handler (default: `Pike.Responder.Default`)
+
   """
 
   @store Application.compile_env(:pike, :store, Pike.Store.ETS)
