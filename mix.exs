@@ -19,14 +19,14 @@ defmodule Pike.Mixfile do
   #
   # Type "mix help compile.app" for more information
   def application do
-    [applications: [:logger, :plug, :phoenix]]
+    [extra_applications: [:logger, :plug, :phoenix]]
   end
 
   defp deps do
     [
       {:plug, "~> 1.14"},
       {:phoenix, "~> 1.7", optional: true},
-      {:ex_doc, ">= 0.21.2", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false, warn_if_outdated: true},
     ]
   end
 
@@ -36,7 +36,7 @@ defmodule Pike.Mixfile do
       maintainers: ["exgfr"],
       licenses: ["MIT"],
       links: %{github: "https://github.com/exgfr/Pike"},
-      files: ~w(lib mix.exs README.md)
+      files: ~w(lib config mix.exs README.md)
     ]
   end
 
@@ -44,7 +44,11 @@ defmodule Pike.Mixfile do
     [
       main: "readme",
       extras: [
-        "README.md"
+        "README.md",
+        "docs/quick-start.md",
+        "docs/error-responses-and-debugging.md",
+        "docs/roll-your-own-store.md",
+        "docs/using-pike-authorization-plug.md",
       ],
       source_url: "https://github.com/exgfr/Pike"
     ]
