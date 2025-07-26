@@ -3,9 +3,9 @@ defmodule Pike.AuthorizationPlug do
   A Plug to authenticate API requests using API keys.
 
   This plug intercepts incoming requests, extracts the Bearer token from the `authorization`
-  header, validates it against a configured key store, and assigns the key structure to the
-  connection if valid. If authentication fails, it delegates error handling to a configured
-  responder.
+  header, validates that we have a record of the key in the configured store, and assigns
+  the key structure to the connection if valid. If authentication fails, it delegates
+  error handling to a configured responder.
 
   ## Features
 
@@ -50,7 +50,7 @@ defmodule Pike.AuthorizationPlug do
 
     * `opts` - Keyword list of options:
       * `:store` - Storage backend module
-      * `:assign_to` - Connection assign key 
+      * `:assign_to` - Connection assign key
       * `:on_auth_failure` - Responder module and function tuple
 
   ## Returns
