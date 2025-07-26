@@ -39,8 +39,16 @@ Global application-wide config (only needed if overriding defaults):
 
 ```elixir
 config :pike,
-  store: Pike.Store.ETS,
+  store: YourApp.APIStore,
   on_auth_failure: {Pike.Responder.Default, :auth_failed}
+```
+
+Create your ETS Table:
+
+```elixir
+defmodule YourApp.APIStore do
+  use Pike.Store.ETS, table_name: :default_api_keys
+end
 ```
 
 ---
@@ -68,13 +76,13 @@ You can define **independent pipelines** for different API key types:
 ```elixir
 pipeline :public_api do
   plug Pike.AuthorizationPlug,
-    store: MyApp.PublicKeyStore,
+    store: YourApp.APIStore,
     assign_to: :public_api_key
 end
 
 pipeline :partner_api do
   plug Pike.AuthorizationPlug,
-    store: MyApp.PartnerStore,
+    store: YourApp.AlternativeAPIStore,
     on_auth_failure: {MyApp.Responder, :auth_failed},
     assign_to: :partner_key
 end
@@ -152,14 +160,52 @@ This lets you:
 
 ---
 
+## 🔑 Key Management
+
+Pike provides functions for managing API keys:
+
+```elixir
+# Create a new key
+Pike.insert(%{
+  key: "abc123",
+  enabled: true,  # Optional, defaults to true
+  permissions: [
+    %{resource: "Products", scopes: [:read, :write]}
+  ]
+})
+
+# Enable/disable a key
+Pike.disable_key("abc123")
+Pike.enable_key("abc123")
+
+# Check if a key is enabled
+Pike.key_enabled?("abc123")
+
+# Delete a key
+Pike.delete_key("abc123")
+
+# Update a key
+Pike.update_key("abc123", %{
+  permissions: [
+    %{resource: "Products", scopes: [:read]}
+  ]
+})
+```
+
+Disabled keys will return a `:disabled` error reason, which is handled by the responder.
+
+---
+
 ## 🧩 Store Backend
 
 Pike uses a pluggable store interface:
 
 ```elixir
-@callback get_key(String.t()) :: {:ok, map()} | :error
-@callback allows?(map(), resource :: String.t(), action :: atom()) :: boolean()
+@callback get_key(String.t()) :: {:ok, map()} | :error | {:error, :disabled}
+@callback action?(map(), resource :: String.t(), action :: atom()) :: boolean()
 @callback insert(map()) :: :ok | {:error, term()}  # optional
+@callback delete_key(String.t()) :: :ok | {:error, term()}  # optional
+@callback update_key(String.t(), map()) :: :ok | {:error, term()}  # optional
 ```
 
 You can provide your own module and configure it per plug or globally.
