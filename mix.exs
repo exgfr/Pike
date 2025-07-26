@@ -11,7 +11,15 @@ defmodule Pike.Mixfile do
       start_permanent: Mix.env() == :prod,
       deps: deps(),
       package: package(),
-      docs: docs()
+      docs: docs(),
+      test_coverage: [tool: ExCoveralls],
+      preferred_cli_env: [
+        coveralls: :test,
+        "coveralls.detail": :test,
+        "coveralls.post": :test,
+        "coveralls.html": :test,
+        "coveralls.cobertura": :test
+      ]
     ]
   end
 
@@ -26,7 +34,8 @@ defmodule Pike.Mixfile do
     [
       {:plug, "~> 1.14"},
       {:phoenix, "~> 1.7", optional: true},
-      {:ex_doc, "~> 0.34", only: :dev, runtime: false, warn_if_outdated: true}
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false, warn_if_outdated: true},
+      {:excoveralls, "~> 0.18", only: :test}
     ]
   end
 
