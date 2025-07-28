@@ -1,25 +1,32 @@
 # Pike
 
-> **Guard at the API Gate** — a lightweight, embeddable Elixir library for API key authentication and fine-grained authorization.
-
 Pike enables API key enforcement with zero external dependencies, pluggable storage backends, resource-aware permissions, and a flexible DSL for defining authorization at the controller and action level.
 
 ---
 
-## ✨ Features
+### Chapters
 
-* 🔐 Authenticate API keys via Plug
-* 🧾 Enforce access control per **resource + action**
-* 🧩 Controller DSL for authorization (`@require_permission`)
-* 🔁 **Multiple pipelines** with custom key handling
-* ⚡️ Fast ETS-backed in-memory store (default)
-* 🧩 Pluggable store interface (bring your own backend)
-* 🚦 Configurable failure handling per pipeline
-* 🧠 Adds authenticated key to `conn.assigns`
+
+- [Pike](#pike)
+    - [Chapters](#chapters)
+  - [Usage](#usage)
+    - [Installation](#installation)
+    - [Configuration](#configuration)
+    - [Using Plug](#using-plug)
+      - [🔀 Multiple Pipelines](#-multiple-pipelines)
+    - [Controller Integration](#controller-integration)
+  - [Permission Model](#permission-model)
+  - [Key Assignment](#key-assignment)
+  - [Key Management](#key-management)
+  - [Store Backend](#store-backend)
+  - [🔖 License](#-license)
+
 
 ---
 
-## 📦 Installation
+## Usage
+
+### Installation
 
 Add Pike to your dependencies:
 
@@ -31,9 +38,7 @@ def deps do
 end
 ```
 
----
-
-## ⚙️ Configuration
+### Configuration
 
 Global application-wide config (only needed if overriding defaults):
 
@@ -51,9 +56,7 @@ defmodule YourApp.APIStore do
 end
 ```
 
----
-
-## 🔌 Using the Plug
+### Using Plug
 
 At its simplest:
 
@@ -61,15 +64,7 @@ At its simplest:
 plug Pike.AuthorizationPlug
 ```
 
-This will:
-
-* Use the ETS store
-* Assign the key to `conn.assigns[:pike_api_key]`
-* Use the default 401/403/500 failure handler
-
----
-
-### 🔀 Multiple Pipelines
+#### 🔀 Multiple Pipelines
 
 You can define **independent pipelines** for different API key types:
 
@@ -100,9 +95,7 @@ scope "/v1/partner", MyAppWeb do
 end
 ```
 
----
-
-## 🧱 Controller Integration
+### Controller Integration
 
 Declare expected permissions using a DSL:
 
@@ -127,7 +120,7 @@ end
 
 ---
 
-## 🔐 Permission Model
+## Permission Model
 
 Each API key must define a list of permissions:
 
@@ -144,7 +137,7 @@ Each API key must define a list of permissions:
 
 ---
 
-## 🧾 Key Assignment
+## Key Assignment
 
 After successful authentication, the API key is available via:
 
@@ -160,7 +153,7 @@ This lets you:
 
 ---
 
-## 🔑 Key Management
+## Key Management
 
 Pike provides functions for managing API keys:
 
@@ -196,7 +189,7 @@ Disabled keys will return a `:disabled` error reason, which is handled by the re
 
 ---
 
-## 🧩 Store Backend
+## Store Backend
 
 Pike uses a pluggable store interface:
 
@@ -209,60 +202,6 @@ Pike uses a pluggable store interface:
 ```
 
 You can provide your own module and configure it per plug or globally.
-
----
-
-### 🚀 Example: ETS Store
-
-```elixir
-Pike.Store.ETS.insert(%{
-  key: "abc123",
-  permissions: [%{resource: "Products", scopes: [:read]}]
-})
-```
-
----
-
-## 🚨 Failure Handling
-
-Pike supports configurable auth failure handlers.
-
-### Failure Reason Atoms:
-
-| Reason Atom              | Meaning                                     | HTTP Status |
-| ------------------------ | ------------------------------------------- | ----------- |
-| `:missing_key`           | No API key provided                         | `401`       |
-| `:invalid_format`        | API key is malformed or unparseable         | `400`       |
-| `:not_found`             | API key not found                           | `403`       |
-| `:disabled`              | API key is disabled                         | `403`       |
-| `:expired`               | API key is expired                          | `403`       |
-| `:unauthorized_resource` | No access to the resource                   | `403`       |
-| `:unauthorized_action`   | Access to resource, but not for this action | `403`       |
-| `:store_error`           | Backend store failed                        | `500`       |
-
-### Default:
-
-```elixir
-config :pike,
-  on_auth_failure: {Pike.Responder.Default, :auth_failed}
-```
-
-You can override per pipeline:
-
-```elixir
-plug Pike.AuthorizationPlug,
-  on_auth_failure: {MyApp.CustomResponder, :auth_failed}
-```
-
----
-
-## 🧠 Customization Summary
-
-| Option            | Default                  | Override At...       |
-| ----------------- | ------------------------ | -------------------- |
-| `store`           | `Pike.Store.ETS`         | Global or plug-level |
-| `assign_to`       | `:pike_api_key`          | Plug-level only      |
-| `on_auth_failure` | `Pike.Responder.Default` | Global or plug-level |
 
 ---
 
