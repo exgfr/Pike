@@ -44,8 +44,9 @@ defmodule Pike.Mixfile do
       name: :pike,
       maintainers: ["exgfr"],
       licenses: ["MIT"],
-      links: %{github: "https://github.com/exgfr/Pike"},
-      files: ~w(lib config mix.exs README.md)
+      links: %{github: "https://github.com/exgfr/Pike",
+               homepage: "https://exgfr.com/oss/pike"},
+      files: ~w(lib config mix.exs README.md LICENSE docs)
     ]
   end
 
