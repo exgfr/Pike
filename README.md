@@ -1,5 +1,8 @@
 # Pike
 
+[![Hex version badge](https://img.shields.io/hexpm/v/pike.svg)](https://hex.pm/packages/pike)
+[![License badge](https://img.shields.io/hexpm/l/pike.svg)](https://github.com/exgfr/Pike/blob/main/LICENSE.md)
+
 Pike enables API key enforcement with zero external dependencies, pluggable storage backends, resource-aware permissions, and a flexible DSL for defining authorization at the controller and action level.
 
 ---
