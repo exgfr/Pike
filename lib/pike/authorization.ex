@@ -37,22 +37,27 @@ defmodule Pike.Authorization do
     end
   end
 
-  defmacro __before_compile__(_env) do
+  defmacro __before_compile__(env) do
+    # Access module attributes during compilation phase
+    default_resource = Module.get_attribute(env.module, :pike_default_resource)
+    permissions = Module.get_attribute(env.module, :pike_permissions)
+    
     quote do
+      # Store attributes as module constants
+      @pike_default_resource_value unquote(default_resource)
+      @pike_permissions_map unquote(Macro.escape(permissions))
+      
       def authorize_api_key(conn, _opts) do
         action = Phoenix.Controller.action_name(conn)
         key = conn.assigns[:pike_api_key] || conn.assigns[:api_key] || nil
 
-        default_resource = Module.get_attribute(__MODULE__, :pike_default_resource)
-        permissions = Module.get_attribute(__MODULE__, :pike_permissions)
-
-        case Enum.find(permissions, fn {a, _} -> a == action end) do
+        case Enum.find(@pike_permissions_map, fn {a, _} -> a == action end) do
           {_action, opts} ->
             resource =
               cond do
                 Keyword.has_key?(opts, :override) -> opts[:override]
-                Keyword.has_key?(opts, :append) -> default_resource <> opts[:append]
-                true -> default_resource
+                Keyword.has_key?(opts, :append) -> @pike_default_resource_value <> opts[:append]
+                true -> @pike_default_resource_value
               end
 
             action = opts[:action]
