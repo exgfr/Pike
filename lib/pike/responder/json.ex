@@ -38,6 +38,7 @@ defmodule Pike.Responder.JSON do
       end
 
     json = ~s({"error":"#{escape(message)}"})
+
     conn
     |> put_resp_content_type("application/json")
     |> send_resp(status, json)

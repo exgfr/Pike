@@ -27,18 +27,32 @@ defmodule Pike.Responder.Hardened do
 
   import Plug.Conn
 
-  @limited_response [:not_found, :disabled, :expired, :unauthorized_resource, :unauthorized_action]
+  @limited_response [
+    :not_found,
+    :disabled,
+    :expired,
+    :unauthorized_resource,
+    :unauthorized_action
+  ]
 
   @spec auth_failed(Plug.Conn.t(), Pike.Responder.reason()) :: Plug.Conn.t()
   def auth_failed(conn, reason) do
     {status, message} =
       case reason do
-        :missing_key -> {401, "Authentication required"}
-        :invalid_format -> {400, "Bad request"}
+        :missing_key ->
+          {401, "Authentication required"}
+
+        :invalid_format ->
+          {400, "Bad request"}
+
         reason when reason in @limited_response ->
           {403, "Access denied"}
-        :store_error -> {500, "Server error"}
-        _ -> {403, "Access denied"}
+
+        :store_error ->
+          {500, "Server error"}
+
+        _ ->
+          {403, "Access denied"}
       end
 
     conn
