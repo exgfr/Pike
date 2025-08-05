@@ -24,33 +24,21 @@ defmodule Pike.Responder.Default do
 
   @spec auth_failed(Plug.Conn.t(), Pike.Responder.reason()) :: Plug.Conn.t()
   def auth_failed(conn, reason) do
-    case reason do
-      :missing_key ->
-        send_resp(conn, 401, "Authentication required") |> halt()
+    {status, message} =
+      case reason do
+        :missing_key -> {401, "Authentication required"}
+        :invalid_format -> {400, "Authentication invalid"}
+        :not_found -> {403, "Authentication failed"}
+        :disabled -> {403, "Authentication rejected"}
+        :expired -> {403, "Authentication expired"}
+        :unauthorized_resource -> {403, "Unauthorized resource"}
+        :unauthorized_action -> {403, "Unauthorized action"}
+        :store_error -> {500, "Authorization unavailable"}
+        _ -> {403, "Access denied"}
+      end
 
-      :invalid_format ->
-        send_resp(conn, 400, "Authentication invalid") |> halt()
-
-      :not_found ->
-        send_resp(conn, 403, "Authentication failed") |> halt()
-
-      :disabled ->
-        send_resp(conn, 403, "Authentication rejected") |> halt()
-
-      :expired ->
-        send_resp(conn, 403, "Authentication expired") |> halt()
-
-      :unauthorized_resource ->
-        send_resp(conn, 403, "Unauthorized resource") |> halt()
-
-      :unauthorized_action ->
-        send_resp(conn, 403, "Unauthorized action") |> halt()
-
-      :store_error ->
-        send_resp(conn, 500, "Authorization unavailable") |> halt()
-
-      _ ->
-        send_resp(conn, 403, "Access denied") |> halt()
-    end
+    conn
+    |> send_resp(status, message)
+    |> halt()
   end
 end
