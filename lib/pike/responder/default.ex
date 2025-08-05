@@ -12,28 +12,28 @@ defmodule Pike.Responder.Default do
   def auth_failed(conn, reason) do
     case reason do
       :missing_key ->
-        send_resp(conn, 401, "Missing API key") |> halt()
+        send_resp(conn, 401, "Authentication required") |> halt()
 
       :invalid_format ->
-        send_resp(conn, 400, "Invalid API key format") |> halt()
+        send_resp(conn, 400, "Authentication invalid") |> halt()
 
       :not_found ->
-        send_resp(conn, 403, "API key not found") |> halt()
+        send_resp(conn, 403, "Authentication failed") |> halt()
 
       :disabled ->
-        send_resp(conn, 403, "API key disabled") |> halt()
+        send_resp(conn, 403, "Authentication rejected") |> halt()
 
       :expired ->
-        send_resp(conn, 403, "API key expired") |> halt()
+        send_resp(conn, 403, "Authentication expired") |> halt()
 
       :unauthorized_resource ->
-        send_resp(conn, 403, "Unauthorized resource access") |> halt()
+        send_resp(conn, 403, "Unauthorized resource") |> halt()
 
       :unauthorized_action ->
         send_resp(conn, 403, "Unauthorized action") |> halt()
 
       :store_error ->
-        send_resp(conn, 500, "Internal authorization error") |> halt()
+        send_resp(conn, 500, "Authorization unavailable") |> halt()
 
       _ ->
         send_resp(conn, 403, "Access denied") |> halt()
