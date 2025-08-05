@@ -16,24 +16,26 @@ defmodule Pike.Authorization do
       def custom(conn, _params), do: ...
   """
 
+  defmacro require_permission(opts) do
+    action = __CALLER__.function |> elem(0)
+
+    IO.inspect("Declaring permission for action: #{action} with opts: #{inspect(opts)}", label: "Pike.Authorization")
+
+    quote do
+      @pike_permissions {unquote(action), unquote(opts)}
+    end
+  end
+
   defmacro __using__(opts) do
     resource = Keyword.fetch!(opts, :resource)
 
     quote do
       @before_compile Pike.Authorization
       @pike_default_resource unquote(resource)
-      Module.register_attribute(__MODULE__, :pike_permissions, accumulate: true)
+      Module.register_attribute(__MODULE__, :pike_permissions, accumulate: true, persist: true)
 
       import Pike.Authorization, only: [require_permission: 1]
       plug(:authorize_api_key)
-    end
-  end
-
-  defmacro require_permission(opts) do
-    action = __CALLER__.function |> elem(0)
-
-    quote do
-      @pike_permissions {unquote(action), unquote(opts)}
     end
   end
 
@@ -41,15 +43,21 @@ defmodule Pike.Authorization do
     # Access module attributes during compilation phase
     default_resource = Module.get_attribute(env.module, :pike_default_resource)
     permissions = Module.get_attribute(env.module, :pike_permissions)
-    
+
     quote do
       # Store attributes as module constants
       @pike_default_resource_value unquote(default_resource)
       @pike_permissions_map unquote(Macro.escape(permissions))
-      
+
+      IO.inspect(@pike_permissions_map, label: "Pike.Authorization")
+      IO.inspect(@pike_default_resource_value, label: "Pike.Authorization")
+
       def authorize_api_key(conn, _opts) do
         action = Phoenix.Controller.action_name(conn)
         key = conn.assigns[:pike_api_key] || conn.assigns[:api_key] || nil
+
+        IO.inspect("Authorizing action: #{action} with key: #{inspect(key)}", label: "Pike.Authorization")
+        IO.inspect("Permissions map: #{@pike_permissions_map}", label: "Pike.Authorization")
 
         case Enum.find(@pike_permissions_map, fn {a, _} -> a == action end) do
           {_action, opts} ->
@@ -62,7 +70,9 @@ defmodule Pike.Authorization do
 
             action = opts[:action]
 
-            if Pike.action?(key, resource: resource, action: action) do
+            IO.inspect("Checking permission for resource: #{resource}, action: #{action}", label: "Pike.Authorization")
+
+            if Pike.action?(key, [resource: resource, action: action]) do
               conn
             else
               {mod, fun} =
