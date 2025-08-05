@@ -225,6 +225,29 @@ end
 
 ## Custom Error Handling
 
+### Built-in Responders
+
+Pike provides multiple built-in responders:
+
+1. **Default Responder** (`Pike.Responder.Default`):
+   - Returns simple plaintext messages with appropriate status codes
+   - Provides specific error details for troubleshooting
+   - Default option if none is specified
+
+2. **Hardened Responder** (`Pike.Responder.Hardened`):
+   - Security-focused responder with minimal information disclosure
+   - Uses generic "Access denied" message for all 403 responses
+   - Prevents information leakage in production environments
+   - Better suited for public-facing APIs
+
+Example usage:
+```elixir
+# Use the hardened responder for improved security
+plug Pike.AuthorizationPlug, on_auth_failure: Pike.Responder.Hardened
+```
+
+### Custom Responders
+
 You can customize how Pike responds to errors by implementing the `Pike.Responder` behavior:
 
 ```elixir
