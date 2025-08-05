@@ -32,7 +32,7 @@ A `:missing_key` error occurs when:
 #### Example Response
 
 ```
-Missing API key
+Authentication required
 ```
 
 #### How to Debug
@@ -62,7 +62,7 @@ A `:not_found` error occurs when:
 #### Example Response
 
 ```
-API key not found
+Authentication failed
 ```
 
 #### How to Debug
@@ -193,7 +193,7 @@ A `:store_error` occurs when:
 #### Example Response
 
 ```
-Internal authorization error
+Authorization unavailable
 ```
 
 #### How to Debug
