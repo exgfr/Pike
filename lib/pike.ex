@@ -20,20 +20,32 @@ defmodule Pike do
 
   """
 
-  @store Application.compile_env(:pike, :store, Pike.Store.ETS)
+  @store Application.compile_env(:pike, :store, nil)
+
+  defp store(store) do
+    if store do
+      store
+    else
+      raise "Pike store not configured! Please set `:store` in your application config."
+    end
+  end
+
+  defp store_implements?(function, arity, store) do
+    function_exported?(store(store), function, arity)
+  end
 
   @doc """
   Fetches an API key struct from the configured store.
   """
-  def get_key(key), do: @store.get_key(key)
+  def get_key(key, store \\ @store), do: store(store).get_key(key)
 
   @doc """
   Checks if the key is allowed to perform an action on a resource.
   """
-  def action?(key_struct, opts) do
+  def action?(key_struct, opts, store \\ @store) do
     resource = Keyword.fetch!(opts, :resource)
     action = Keyword.fetch!(opts, :action)
-    @store.action?(key_struct, resource, action)
+    store(store).action?(key_struct, resource, action)
   end
 
   @doc """
@@ -50,9 +62,9 @@ defmodule Pike do
   }
   ```
   """
-  def insert(key_struct) do
-    if function_exported?(@store, :insert, 1) do
-      @store.insert(key_struct)
+  def insert(key_struct, store \\ @store) do
+    if store_implements?(:insert, 1, store) do
+      store(store).insert(key_struct)
     else
       {:error, :insert_not_supported}
     end
@@ -61,9 +73,9 @@ defmodule Pike do
   @doc """
   Delete a key from the store (if supported).
   """
-  def delete_key(key) do
-    if function_exported?(@store, :delete_key, 1) do
-      @store.delete_key(key)
+  def delete_key(key, store \\ @store) do
+    if store_implements?(:delete_key, 1, store) do
+      store(store).delete_key(key)
     else
       {:error, :delete_not_supported}
     end
@@ -72,9 +84,9 @@ defmodule Pike do
   @doc """
   Update an existing key in the store (if supported).
   """
-  def update_key(key, updates) do
-    if function_exported?(@store, :update_key, 2) do
-      @store.update_key(key, updates)
+  def update_key(key, updates, store \\ @store) do
+    if store_implements?(:update_key, 2, store) do
+      store(store).update_key(key, updates)
     else
       {:error, :update_not_supported}
     end
@@ -83,22 +95,22 @@ defmodule Pike do
   @doc """
   Enable a key that has been disabled.
   """
-  def enable_key(key) do
-    update_key(key, %{enabled: true})
+  def enable_key(key, store \\ @store) do
+    update_key(key, %{enabled: true}, store)
   end
 
   @doc """
   Disable a key temporarily without deleting it.
   """
-  def disable_key(key) do
-    update_key(key, %{enabled: false})
+  def disable_key(key, store \\ @store) do
+    update_key(key, %{enabled: false}, store)
   end
 
   @doc """
   Check if a key is enabled.
   """
-  def key_enabled?(key) do
-    case get_key(key) do
+  def key_enabled?(key, store \\ @store) do
+    case get_key(key, store) do
       {:ok, %{enabled: false}} -> false
       {:ok, _} -> true
       _ -> false

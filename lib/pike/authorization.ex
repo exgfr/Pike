@@ -20,66 +20,108 @@ defmodule Pike.Authorization do
     resource = Keyword.fetch!(opts, :resource)
 
     quote do
-      @before_compile Pike.Authorization
       @pike_default_resource unquote(resource)
-      Module.register_attribute(__MODULE__, :pike_permissions, accumulate: true)
 
-      import Pike.Authorization, only: [require_permission: 1]
+      @before_compile Pike.Authorization # Trigger compilation phase
+
+      Module.register_attribute(__MODULE__, :require_permission, persist: false)
+      Module.register_attribute(__MODULE__, :__permissions__, accumulate: true)
+
+      @on_definition Pike.Authorization # Hook into function definitions
+
       plug(:authorize_api_key)
     end
   end
 
-  defmacro require_permission(opts) do
-    action = __CALLER__.function |> elem(0)
+  # This is called every time a function is defined
+  def __on_definition__(env, _kind, name, args, _guards, _body) do
+    arity = length(args)
+    example = Module.get_attribute(env.module, :require_permission)
 
-    quote do
-      @pike_permissions {unquote(action), unquote(opts)}
+    if is_list(example) do
+      Module.put_attribute(env.module, :__permissions__, {{name, arity}, example})
     end
+
+    Module.delete_attribute(env.module, :require_permission)
   end
 
   defmacro __before_compile__(env) do
-    # Access module attributes during compilation phase
     default_resource = Module.get_attribute(env.module, :pike_default_resource)
-    permissions = Module.get_attribute(env.module, :pike_permissions)
-    
+
+    permissions =
+      Module.get_attribute(env.module, :__permissions__) || []
+      |> Enum.into(%{})
+
     quote do
-      # Store attributes as module constants
-      @pike_default_resource_value unquote(default_resource)
-      @pike_permissions_map unquote(Macro.escape(permissions))
-      
       def authorize_api_key(conn, _opts) do
         action = Phoenix.Controller.action_name(conn)
         key = conn.assigns[:pike_api_key] || conn.assigns[:api_key] || nil
+        permissions = __MODULE__.__permissions__()
 
-        case Enum.find(@pike_permissions_map, fn {a, _} -> a == action end) do
-          {_action, opts} ->
-            resource =
-              cond do
-                Keyword.has_key?(opts, :override) -> opts[:override]
-                Keyword.has_key?(opts, :append) -> @pike_default_resource_value <> opts[:append]
-                true -> @pike_default_resource_value
-              end
+        IO.inspect("Authorizing action: #{action}", label: "Pike.Authorization")
+        IO.inspect(permissions, label: "Pike.Authorization:permissions")
 
-            action = opts[:action]
-
-            if Pike.action?(key, resource: resource, action: action) do
-              conn
-            else
-              {mod, fun} =
-                Application.get_env(
-                  :pike,
-                  :on_auth_failure,
-                  {Pike.Responder.Default, :auth_failed}
-                )
-
-              apply(mod, fun, [conn, :unauthorized_action])
-            end
-
-          nil ->
-            # No permission required for this action
-            conn
-        end
+        Pike.Authorization.handle_request(conn, action, key, permissions, @pike_default_resource)
       end
+
+      def __permissions__, do: unquote(Macro.escape(permissions))
+    end
+  end
+
+  def handle_request(conn, action, key, permissions, pike_default_resource) do
+    # Ensure action is an atom for lookup
+    action_atom = if is_binary(action), do: String.to_atom(action), else: action
+
+    IO.inspect("Checking permission for action: #{inspect(action_atom)}", label: "Pike.Authorization")
+
+    case find_permission(action_atom, permissions) do
+      nil ->
+        # No permission required for this action
+        IO.inspect("No permission required for action: #{inspect(action_atom)}", label: "Pike.Authorization")
+        conn
+
+      {{_action, _arity}, opts} ->
+        IO.inspect("Found permission requirements: #{inspect(opts)}", label: "Pike.Authorization")
+        resource = get_resource(opts, pike_default_resource)
+        action_permission = opts[:action]
+
+        authorize_action(conn, key, resource, action_permission)
+    end
+  end
+
+  defp authorize_action(conn, key, resource, action) do
+    IO.inspect("Checking permission for resource: #{resource}, action: #{action}", label: "Pike.Authorization")
+
+    if Pike.action?(key, [resource: resource, action: action]) do
+      IO.inspect("Permission granted", label: "Pike.Authorization")
+      conn
+    else
+      IO.inspect("Permission denied", label: "Pike.Authorization")
+      {mod, fun} =
+        Application.get_env(
+          :pike,
+          :on_auth_failure,
+          {Pike.Responder.Default, :auth_failed}
+        )
+
+      apply(mod, fun, [conn, :unauthorized_action])
+    end
+  end
+
+  # Handle both string and atom action names
+  defp find_permission(action, permissions) when is_binary(action) do
+    find_permission(String.to_atom(action), permissions)
+  end
+
+  defp find_permission(action, permissions) when is_atom(action) do
+    Enum.find(permissions, fn {{a, _}, _} -> a == action end)
+  end
+
+  defp get_resource(opts, default_resource) do
+    cond do
+      Keyword.has_key?(opts, :override) -> opts[:override]
+      Keyword.has_key?(opts, :append) -> default_resource <> opts[:append]
+      true -> default_resource
     end
   end
 end
